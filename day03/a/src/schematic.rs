@@ -46,6 +46,7 @@ impl Schematic {
         fn scan_lines_for_symbols(
             number: u32,
             sub: &str,
+            start_y: usize,
             start_x: usize,
             end_x: usize,
             parts: &mut Vec<Part>,
@@ -63,7 +64,7 @@ impl Schematic {
                     if !(('0' <= label && label <= '9') || label == '.' || label == '\n') {
                         symbols.push(Symbol {
                             x: idx + start_x,
-                            y,
+                            y: y + start_y,
                             label,
                         })
                     }
@@ -99,7 +100,7 @@ impl Schematic {
 
                 let end_char = ((end_y + 1) * width).min(text.len());
                 let sub = &text[start_y * width..end_char].trim();
-                scan_lines_for_symbols(number, sub, start_x, end_x, &mut parts);
+                scan_lines_for_symbols(number, sub, start_y, start_x, end_x, &mut parts);
             }
 
             y += 1;
