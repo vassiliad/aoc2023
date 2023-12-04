@@ -18,7 +18,7 @@ fn solve(cards: &Vec<b::card::Card>) -> u128 {
             .count()
     }
 
-    let mut total_cards: Vec<u128> = cards.iter().map(|_| 1).collect();
+    let mut total_cards = vec![1; cards.len()];
 
     cards
         .iter()
