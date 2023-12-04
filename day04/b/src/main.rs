@@ -20,18 +20,14 @@ fn solve(cards: &Vec<b::card::Card>) -> u128 {
 
     let mut total_cards = vec![1; cards.len()];
 
-    cards
-        .iter()
-        .enumerate()
-        .map(|(idx, card)| {
-            let common = calc_common(card);
-            for i in idx + 1..(idx + 1 + common) {
-                total_cards[i] += total_cards[idx];
-            }
-        })
-        .count();
+    cards.iter().enumerate().fold(0u128, |acc, (idx, card)| {
+        let common = calc_common(card);
+        for i in idx + 1..(idx + 1 + common) {
+            total_cards[i] += total_cards[idx];
+        }
 
-    total_cards.iter().sum()
+        acc + total_cards[idx]
+    })
 }
 
 #[test]
