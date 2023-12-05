@@ -26,6 +26,7 @@ fn solve(book: &Book) -> usize {
                 n.1.or(Some(src)).unwrap()
             });
 
+            println!("{seed} -> {last}");
             last
         })
         .min()
@@ -35,7 +36,7 @@ fn solve(book: &Book) -> usize {
 
 #[test]
 fn test_sample() -> Result<()> {
-    let sample = "seeds: 79 14 55 13
+    let sample = "seeds: 79 14 55 13 56
 
 seed-to-soil map:
 50 98 2
