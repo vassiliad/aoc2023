@@ -25,7 +25,7 @@ fn parse_text(text: &str) -> Result<Vec<Race>> {
         .next()
         .with_context(|| "Getting line with Distance information")?
         .strip_prefix("Distance:")
-        .with_context(|| "Stripping preffix Distance:")?;
+        .with_context(|| "Stripping prefix Distance:")?;
 
     let times = times.replace(" ", "");
     let distances = distances.replace(" ", "");
