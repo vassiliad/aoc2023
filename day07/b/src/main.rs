@@ -70,7 +70,6 @@ fn parse_cards(cards: &str) -> Result<Cards> {
     histogram.sort_by(|a: &(usize, u8), &b| b.1.cmp(&a.1));
 
     // VV: update histogram with Joker info before looking at the cards
-    let histogram = &mut histogram[..];
     histogram[0].1 += jokers;
 
     // VV: re-sort to take into account changes introduced by converting Jokers to other cards
