@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use clap::{arg, command, Parser};
 
 const HIGH: u8 = 0;
@@ -52,7 +52,11 @@ fn parse_cards(cards: &str) -> Result<Cards> {
 
             let x = x as u8;
 
-            *histogram.get_mut(x as usize).unwrap() += 1;
+            if x != 1 {
+                // VV: Don't record Jokers in the histogram, transform them into the
+                // card with the most copies in a later step
+                *histogram.get_mut(x as usize).unwrap() += 1;
+            }
 
             x
         })
@@ -68,66 +72,29 @@ fn parse_cards(cards: &str) -> Result<Cards> {
 
     histogram.sort_by(|a: &(usize, u8), &b| b.1.cmp(&a.1));
 
-    let histogram = &histogram[..];
+    // VV: update histogram with Joker info before looking at the cards
+    let histogram = &mut histogram[..];
+    histogram[0].1 += jokers;
 
-    // VV: Hunt for the edge case :)
+    // VV: re-sort to take into account changes introduced by converting Jokers to other cards
+    histogram.sort_by(|a: &(usize, u8), &b| b.1.cmp(&a.1));
+
+    // VV: The Jokers have already been changed to the most beneficial Card.
+    // Therefore, there's no need for special treatment here.
     let hand_type = if histogram[0].1 == 5 {
         FIVE_OF_A_KIND
     } else if histogram[0].1 == 4 {
-        // VV: It was this <-- code proclaimed 4 of a kind for jokers==4
-        if jokers == 1 || jokers == 4 {
-            FIVE_OF_A_KIND
-        } else if jokers == 0 {
-            FOUR_OF_A_KIND
-        } else {
-            unreachable!("4-of-kind")
-        }
+        FOUR_OF_A_KIND
     } else if histogram[0].1 == 3 && histogram[1].1 == 2 {
-        if jokers == 2 || jokers == 3 {
-            FIVE_OF_A_KIND // VV: Upgrade Jokers to the card of which there are 3 or 2
-        } else if jokers == 0 {
-            FULL_HOUSE // VV: full house
-        } else {
-            unreachable!("full house")
-        }
+        FULL_HOUSE
     } else if histogram[0].1 == 3 {
-        if jokers == 1 {
-            FOUR_OF_A_KIND // VV: Upgrade Joker to the card of which there are 4
-        } else if jokers == 3 {
-            FOUR_OF_A_KIND // VV: Upgrade Jokers to any other card
-        } else if jokers == 0 {
-            THREE_OF_A_KIND // VV: 3 of a kind
-        } else {
-            unreachable!("3 of a kind")
-        }
+        THREE_OF_A_KIND
     } else if histogram[0].1 == 2 && histogram[1].1 == 2 {
-        if jokers == 2 {
-            FOUR_OF_A_KIND // VV: Upgrade Jokers to the cards of which there are 2
-        } else if jokers == 1 {
-            FULL_HOUSE // VV: Upgrade Joker to one of the 2 pairs
-        } else if jokers == 0 {
-            TWO_PAIR // VV: 2 pairs
-        } else {
-            unreachable!("two pairs")
-        }
+        TWO_PAIR
     } else if histogram[0].1 == 2 {
-        if jokers == 1 {
-            THREE_OF_A_KIND // VV: Upgrade Joker to the card of which there are 2
-        } else if jokers == 2 {
-            THREE_OF_A_KIND // VV: Upgrade Jokers to any other card
-        } else if jokers == 0 {
-            PAIR // VV: 1 pair
-        } else {
-            unreachable!("Pair")
-        }
+        PAIR
     } else {
-        if jokers == 1 {
-            PAIR // VV: Upgrade Joker to any of the other cards
-        } else if jokers == 0 {
-            HIGH // VV: high card
-        } else {
-            unreachable!("High card")
-        }
+        HIGH
     };
 
     numbers.insert(0, hand_type);
