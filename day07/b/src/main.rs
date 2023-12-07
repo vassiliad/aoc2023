@@ -31,7 +31,6 @@ struct Hand {
 
 fn parse_cards(cards: &str) -> Result<Cards> {
     let mut histogram = vec![0u8; 15];
-    let mut jokers = 0;
 
     let mut numbers: Vec<u8> = cards
         .chars()
@@ -39,10 +38,7 @@ fn parse_cards(cards: &str) -> Result<Cards> {
             let x = match c {
                 '2'..='9' => c.to_digit(10).unwrap(),
                 'T' => 10,
-                'J' => {
-                    jokers += 1;
-                    1
-                }
+                'J' => 1,
                 'Q' => 12,
                 'K' => 13,
                 'A' => 14,
@@ -52,24 +48,25 @@ fn parse_cards(cards: &str) -> Result<Cards> {
 
             let x = x as u8;
 
-            if x != 1 {
-                // VV: Don't record Jokers in the histogram, transform them into the
-                // card with the most copies in a later step
-                *histogram.get_mut(x as usize).unwrap() += 1;
-            }
+            *histogram.get_mut(x as usize).unwrap() += 1;
 
             x
         })
         .collect();
 
-    // VV: Reverse sort histogram so that larger numbers end up first
-    // Each entry is (card type, card population)
+    // VV: Each entry is (card type, card population)
     let mut histogram: Vec<(usize, u8)> = histogram
         .iter()
         .enumerate()
         .map(|(idx, card)| (idx, *card))
         .collect();
 
+    // VV: Extract the Jokers, then find the card with the most copies and increase it
+    // by the number of Jokers
+    let jokers = histogram[1].1;
+    histogram[1].1 = 0;
+
+    // VV: Reverse sort histogram so that larger numbers end up first
     histogram.sort_by(|a: &(usize, u8), &b| b.1.cmp(&a.1));
 
     // VV: update histogram with Joker info before looking at the cards
