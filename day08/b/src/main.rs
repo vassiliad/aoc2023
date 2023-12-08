@@ -70,13 +70,15 @@ fn parse_path(path: &std::path::Path) -> Result<Board> {
     parse_text(&contents)
 }
 
-fn walk_to_node(board: &Board, curr: &str, dest: &str) -> Option<u128> {
+fn walk_to_any_end_node(board: &Board, curr: &str) -> Vec<u128> {
     let mut steps = 0u128;
     let mut curr = curr;
 
     let mut explored: HashSet<(String, usize)> = HashSet::new();
+    let mut ret = vec![];
+    let mut end_nodes_visited = HashSet::new();
 
-    while curr != dest {
+    loop {
         let dir_index = (steps % board.directions.len() as u128) as usize;
         let dir = &board.directions[dir_index];
         steps += 1;
@@ -91,7 +93,7 @@ fn walk_to_node(board: &Board, curr: &str, dest: &str) -> Option<u128> {
 
         if let Some(_) = explored.get(&next) {
             // VV: Node is unreachable
-            return None;
+            return ret;
         }
 
         explored.insert(next);
@@ -101,9 +103,13 @@ fn walk_to_node(board: &Board, curr: &str, dest: &str) -> Option<u128> {
             Direction::Right => &options.1,
         }
         .as_ref();
-    }
 
-    Some(steps)
+        if curr.ends_with('Z') && !end_nodes_visited.contains(&curr.to_string()) {
+            end_nodes_visited.insert(curr.to_string());
+
+            ret.push(steps)
+        }
+    }
 }
 
 // VV: Produced this starting from https://stackoverflow.com/a/65780800
@@ -124,31 +130,15 @@ fn product(vectors: Vec<Vec<u128>>) -> Vec<Vec<u128>> {
 }
 
 fn solve(board: &Board) -> u128 {
-    let mut nodes_start = vec![];
-    let mut nodes_end = vec![];
-
-    for (node, _) in board.maze.iter() {
-        if node.ends_with('Z') {
-            nodes_end.push(node.clone());
-        } else if node.ends_with('A') {
-            nodes_start.push(node.clone());
-        }
-    }
-
     // VV: A vector of vectors. Each outer vector represents one A-Node. Each inner vector is the
     // steps to walk from said A-Node to the reachable Z-Nodes;
     let mut book = vec![];
 
     // VV: Visit all reachable Z-Nodes from all A-Nodes and record the distance (in number of steps)
-    for curr in nodes_start.iter() {
-        let mut distances = vec![];
-        for dest in nodes_end.iter() {
-            if let Some(steps) = walk_to_node(board, curr, dest) {
-                distances.push(steps);
-            }
+    for curr in board.maze.keys() {
+        if curr.ends_with('A') {
+            book.push(walk_to_any_end_node(&board, curr))
         }
-
-        book.push(distances);
     }
 
     // VV: The answer is min(lcm([a[i][z for all reachable z from a[i]] for all i])
