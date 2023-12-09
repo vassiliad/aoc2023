@@ -48,11 +48,7 @@ fn solve(values: &Vec<Vec<i128>>) -> i128 {
                 output.clear();
             }
 
-            let next = aggregate.iter().sum::<i128>();
-
-            // println!("{values:?} -> {next} from {aggregate:?}");
-
-            next
+            aggregate.iter().sum::<i128>()
         })
         .sum()
 }
