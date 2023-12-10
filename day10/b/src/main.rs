@@ -326,8 +326,7 @@ fn apply_stencil(blown: &mut Vec<u8>, width: usize, x: usize, y: usize, smaller:
     }
 }
 
-
-fn solve(maze: &mut Maze) -> usize {
+fn discover_loop(maze: &mut Maze) {
     let neighbours = maze.neighbours(maze.start_pos);
 
     for (pos, direction) in neighbours {
@@ -351,6 +350,7 @@ fn solve(maze: &mut Maze) -> usize {
                 .collect();
 
             // VV: Clear the maze and calculate the type of the pipe at location S
+            // VV: This is a delta from Part A
             maze.start = Pipe::from_directions(&real_neighbours[0].1, &real_neighbours[1].1);
 
             for idx in 0..maze.pipes.len() {
@@ -366,6 +366,14 @@ fn solve(maze: &mut Maze) -> usize {
             break;
         }
     }
+}
+
+fn solve(maze: &mut Maze) -> usize {
+    // VV: Nearly identical to Part A. The difference is that the method also updates the
+    // pipes so that:
+    // 1. the Starting pipe is the actual shape of the pipe
+    // 2. the maze only contains pipes that are part of the loop, everything else is empty space
+    discover_loop(maze);
 
     // VV: Blow up the maze and make it 9 times as large (3x for the X axis and 3x for the Y axis)
     // Intuitively, instead of having 1 Cell with a pipe that has 2 shapes oriented in different
