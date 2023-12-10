@@ -387,31 +387,18 @@ fn solve(maze: &mut Maze) -> usize {
             let idx = y * maze.width + x;
             let pipe = maze.pipes[idx];
 
-            match pipe {
-                Pipe::NS  => {
-                    apply_stencil(&mut blown, iwidth, x*3, y*3, &STENCIL_NORTH_SOUTH);
-                },
-                Pipe::EW  => {
-                    apply_stencil(&mut blown, iwidth, x*3, y*3, &STENCIL_EAST_WEST);
-                },
-                Pipe::NE  => {
-                    apply_stencil(&mut blown, iwidth, x*3, y*3, &STENCIL_NORTH_EAST);
-                },
-                Pipe::NW  => {
-                    apply_stencil(&mut blown, iwidth, x*3, y*3, &STENCIL_NORTH_WEST);
-                },
-                Pipe::SW  => {
-                    apply_stencil(&mut blown, iwidth, x*3, y*3, &STENCIL_SOUTH_WEST);
-                },
-                Pipe::SE  => {
-                    apply_stencil(&mut blown, iwidth, x*3, y*3, &STENCIL_SOUTH_EAST);
-                },
-                Pipe::Empty  => {
-                    apply_stencil(&mut blown, iwidth, x*3, y*3, &[2; 9]);
-                },
-
+            let stencil = match pipe {
+                Pipe::NS => &STENCIL_NORTH_SOUTH,
+                Pipe::EW => &STENCIL_EAST_WEST,
+                Pipe::NE => &STENCIL_NORTH_EAST,
+                Pipe::NW => &STENCIL_NORTH_WEST,
+                Pipe::SW => &STENCIL_SOUTH_WEST,
+                Pipe::SE => &STENCIL_SOUTH_EAST,
+                Pipe::Empty => &[2; 9],
                 Pipe::Start => unreachable!()
-            }
+            };
+
+            apply_stencil(&mut blown, iwidth, x * 3, y * 3, stencil);
         }
     }
 
