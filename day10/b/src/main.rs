@@ -16,14 +16,14 @@ static STENCIL_EAST_WEST: [u8;9] = [
     0, 0, 0
 ];
 
-// VV: Count the "southern" end of a North "pipe" as a "all" for the bucket-fill operation
+// VV: Count the "southern" end of a North-facing "pipe" as a "wall" for the bucket-fill operation
 static STENCIL_NORTH_EAST: [u8;9] = [
     0, 1, 0,
     0, 1, 3,
     0, 0, 0
 ];
 
-// VV: Count the "southern" end of a North "pipe" as a "all" for the bucket-fill operation
+// VV: Count the "southern" end of a North-facing "pipe" as a "wall" for the bucket-fill operation
 static STENCIL_NORTH_WEST: [u8;9] = [
     0, 1, 0,
     3, 1, 0,
