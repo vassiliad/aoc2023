@@ -84,7 +84,7 @@ fn parse_text(text: &str) -> Result<Space> {
     width += empty_columns.len() as i128;
     height += empty_rows.len() as i128;
 
-    let mut expand_galaxy_coords = |x, y| {
+    let expand_galaxy_coords = |x, y| {
         let delta_x = empty_columns.partition_point(|col_idx| col_idx < x) as i128;
         let delta_y = empty_rows.partition_point(|row_idx| row_idx < y) as i128;
 
