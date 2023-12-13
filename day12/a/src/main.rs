@@ -201,8 +201,13 @@ fn solve(springs: &mut Vec<SpringRow>) -> u128 {
     springs
         .iter_mut()
         .map(|s| {
+            let repres = format!("{s}");
+
             s.trim_good();
-            count_valid_permutations(s)
+            let x = count_valid_permutations(s);
+
+            println!("{repres} -> {x}");
+            x
         })
         .sum()
 }
@@ -221,6 +226,30 @@ fn test_sample() -> Result<()> {
     let solution = solve(&mut springs);
 
     assert_eq!(solution, 21);
+
+    Ok(())
+}
+
+#[test]
+fn test_one() -> Result<()> {
+    let sample = "??????.??..? 2,1,2";
+    let mut springs = parse_text(sample)?;
+
+    let solution = solve(&mut springs);
+
+    assert_eq!(solution, 6);
+
+    Ok(())
+}
+
+#[test]
+fn test_two() -> Result<()> {
+    let sample = "???.###????.###????.###????.###????.### 1,1,3,1,1,3,1,1,3,1,1,3,1,1,3";
+    let mut springs = parse_text(sample)?;
+
+    let solution = solve(&mut springs);
+
+    assert_eq!(solution, 6);
 
     Ok(())
 }
