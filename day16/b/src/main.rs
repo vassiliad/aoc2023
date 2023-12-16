@@ -1,6 +1,7 @@
 use anyhow::{bail, Context, Result};
 use clap::{arg, command, Parser};
 use rayon::prelude::*;
+use std::collections::HashSet;
 
 const NO_BEAMS: u8 = 0;
 
@@ -232,8 +233,8 @@ fn propagate_bunch(
     x: isize,
     y: isize,
     only_through_empty: bool,
-) -> bool {
-    let mut changed = false;
+) -> HashSet<(isize, isize)> {
+    let mut updated = HashSet::new();
     let curr_cell = cave.board[(x + y * cave.width) as usize];
 
     for beam in [Beam::North, Beam::South, Beam::West, Beam::East] {
@@ -249,12 +250,13 @@ fn propagate_bunch(
                     next_beams |= beam.to_u8();
 
                     update_bunch_in_cell(next_cell, next_beams);
-                    changed = true;
+
+                    updated.insert((bx, by));
                 }
             }
         }
     }
-    changed
+    updated
 }
 
 fn simulate_beams(mut cave: Cave, start_x: isize, start_y: isize, seed: Bunch) -> u128 {
@@ -270,33 +272,35 @@ fn simulate_beams(mut cave: Cave, start_x: isize, start_y: isize, seed: Bunch) -
         _ => unreachable!("Invalid mine"),
     };
 
-    let mut changed = true;
+    let mut pending = vec![((start_x, start_y))];
 
-    while changed {
-        changed = false;
+    while pending.len() > 0 {
+        let (x, y) = pending.pop().unwrap();
 
-        for y in 0..cave.height {
-            for x in 0..cave.width {
-                let curr_cell = cave.board[(x + y * cave.width) as usize].clone();
+        let curr_cell = cave.board[(x + y * cave.width) as usize].clone();
 
-                let curr_bunch = extract_beams(&curr_cell).unwrap();
+        let curr_bunch = extract_beams(&curr_cell).unwrap();
 
-                // VV: Propagate the beams in the current cell to their next destination
-                changed |= propagate_bunch(&curr_bunch, &mut cave, x, y, true);
-                let mut next_bunch = Bunch::default();
-                for beam in [Beam::North, Beam::South, Beam::West, Beam::East] {
-                    if beam.to_u8() & curr_bunch == 0 {
-                        continue;
-                    }
-                    // VV: Calculate the next positions for the beam in the current bunch
-                    if let Some(next_bunch_for_beam) = beam.transform(&curr_cell) {
-                        next_bunch |= next_bunch_for_beam
-                    }
-                }
+        let mut updated = HashSet::new();
+        // VV: Propagate the beams in the current cell to their next destination
+        updated.extend(propagate_bunch(&curr_bunch, &mut cave, x, y, true));
 
-                // VV: Propagate the beams in the current cell to their next destination
-                changed |= propagate_bunch(&next_bunch, &mut cave, x, y, false);
+        let mut next_bunch = Bunch::default();
+        for beam in [Beam::North, Beam::South, Beam::West, Beam::East] {
+            if beam.to_u8() & curr_bunch == 0 {
+                continue;
             }
+            // VV: Calculate the next positions for the beam in the current bunch
+            if let Some(next_bunch_for_beam) = beam.transform(&curr_cell) {
+                next_bunch |= next_bunch_for_beam
+            }
+        }
+
+        // VV: Propagate the beams in the current cell to their next destination
+        updated.extend(propagate_bunch(&next_bunch, &mut cave, x, y, false));
+
+        for cell_location in updated {
+            pending.push(cell_location);
         }
     }
 
