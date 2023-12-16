@@ -263,7 +263,7 @@ fn simulate_beams(mut cave: Cave, start_x: isize, start_y: isize, seed: Bunch) -
     let first = &mut cave.board[(start_x + start_y * cave.width) as usize];
 
     *first = match first {
-        Cell::Wall => unreachable!("Top-left cell cannot be a wall"),
+        Cell::Wall => unreachable!("Seed cell cannot be a wall"),
         Cell::Empty(0) => Cell::Empty(seed),
         Cell::SplitterVertical(0) => Cell::SplitterVertical(seed),
         Cell::SplitterHorizontal(0) => Cell::SplitterHorizontal(seed),
