@@ -1,5 +1,6 @@
 use anyhow::{bail, Context, Result};
 use clap::{arg, command, Parser};
+use rayon::prelude::*;
 
 const NO_BEAMS: u8 = 0;
 
@@ -307,6 +308,7 @@ fn simulate_beams(mut cave: Cave, start_x: isize, start_y: isize, seed: Bunch) -
 
 fn solve(cave: &Cave) -> u128 {
     (0..cave.width - 1)
+        .into_par_iter()
         .map(|start_x| {
             simulate_beams(cave.clone(), start_x, 0, Beam::South.to_u8()).max(simulate_beams(
                 cave.clone(),
@@ -319,6 +321,7 @@ fn solve(cave: &Cave) -> u128 {
         .unwrap()
         .max(
             (0..cave.height - 1)
+                .into_par_iter()
                 .map(|start_y| {
                     simulate_beams(cave.clone(), 0, start_y, Beam::East.to_u8()).max(
                         simulate_beams(cave.clone(), cave.width - 1, start_y, Beam::West.to_u8()),
