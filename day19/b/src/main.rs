@@ -2,7 +2,10 @@ use anyhow::{bail, Context, Result};
 use clap::{arg, command, Parser};
 use std::collections::BTreeMap;
 
-#[derive(Debug)]
+const MIN_PART: u128 = 1;
+const MAX_PART: u128 = 4000;
+
+#[derive(Debug, Clone)]
 enum Kind {
     X,
     M,
@@ -31,10 +34,10 @@ enum Decision {
     Delegate(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Condition {
     Less(Kind, u128),
-    More(Kind, u128),
+    Greater(Kind, u128),
 }
 
 #[derive(Debug)]
@@ -49,43 +52,31 @@ struct Workflow {
     layers: Vec<Layer>,
 }
 
-#[derive(Debug, Default)]
+type MyRange = (u128, u128);
+
+#[derive(Debug, Clone)]
 struct Part {
-    x: u128,
-    m: u128,
-    a: u128,
-    s: u128,
+    x: MyRange,
+    m: MyRange,
+    a: MyRange,
+    s: MyRange,
 }
 
-impl Part {
-    fn set(&mut self, kind: &Kind, value: u128) {
-        match kind {
-            Kind::X => self.x = value,
-            Kind::M => self.m = value,
-            Kind::A => self.a = value,
-            Kind::S => self.s = value,
+impl Default for Part {
+    fn default() -> Self {
+        Part {
+            x: (MIN_PART, MAX_PART),
+            m: (MIN_PART, MAX_PART),
+            a: (MIN_PART, MAX_PART),
+            s: (MIN_PART, MAX_PART),
         }
-    }
-
-    fn get(&self, kind: &Kind) -> u128 {
-        match kind {
-            Kind::X => self.x,
-            Kind::M => self.m,
-            Kind::A => self.a,
-            Kind::S => self.s,
-        }
-    }
-
-    fn value(&self) -> u128 {
-        return self.x + self.m + self.a + self.s;
     }
 }
 
 type Workflows = BTreeMap<String, Workflow>;
 
-fn parse_text(text: &str) -> Result<(Vec<Part>, Workflows)> {
+fn parse_text(text: &str) -> Result<Workflows> {
     let mut workflows = Workflows::new();
-    let mut parts = Vec::new();
 
     for line in text.lines() {
         let line = line.trim();
@@ -128,7 +119,7 @@ fn parse_text(text: &str) -> Result<(Vec<Part>, Workflows)> {
                                 .unwrap();
 
                             Layer {
-                                condition: Some(Condition::More(kind, value)),
+                                condition: Some(Condition::Greater(kind, value)),
                                 decision,
                             }
                         } else {
@@ -151,80 +142,113 @@ fn parse_text(text: &str) -> Result<(Vec<Part>, Workflows)> {
             let name = name.to_string();
             workflows.insert(name.clone(), Workflow { name, layers });
         } else {
-            let mut part = Part::default();
-            let line = line
-                .strip_suffix('}')
-                .with_context(|| "Strip suffix }")
-                .unwrap();
-            let line = line
-                .strip_prefix('{')
-                .with_context(|| "Strip prefix {")
-                .unwrap();
-
-            for member in line.split(',') {
-                let member = member.trim();
-                if let Some((kind, value)) = member.split_once('=') {
-                    let kind = Kind::from_str(kind).unwrap();
-                    let value = value
-                        .parse()
-                        .with_context(|| "Parsing Value member")
-                        .unwrap();
-                    part.set(&kind, value);
-                } else {
-                    bail!("Invalid member definition {member}")
-                }
-            }
-
-            parts.push(part);
+            // VV: No parts for this puzzle
+            break;
         }
     }
 
-    Ok((parts, workflows))
+    Ok(workflows)
 }
 
-fn parse_path(path: &std::path::Path) -> Result<(Vec<Part>, Workflows)> {
+fn parse_path(path: &std::path::Path) -> Result<Workflows> {
     let contents = std::fs::read_to_string(path).with_context(|| "Reading input")?;
     parse_text(&contents)
 }
 
-fn process_part(part: &Part, workflows: &Workflows) -> bool {
-    let mut wf_name = "in".to_string();
-
-    loop {
-        // println!("{part:?} with wf {wf_name}");
-        let wf = workflows.get(&wf_name).unwrap();
-
-        for (_idx, layer) in wf.layers.iter().enumerate() {
-            let condition = if let Some(condition) = &layer.condition {
-                match condition {
-                    Condition::Less(kind, value) => part.get(kind) < *value,
-                    Condition::More(kind, value) => part.get(kind) > *value,
-                }
-            } else {
-                true
-            };
-
-            if condition {
-                // println!(" Layer {idx} = {layer:?}");
-                match &layer.decision {
-                    Decision::Accept => return true,
-                    Decision::Reject => return false,
-                    Decision::Delegate(other_wf) => {
-                        wf_name = other_wf.clone();
-                        break;
-                    }
-                }
-            }
+impl Condition {
+    fn inverse(&self) -> Self {
+        match self {
+            Condition::Less(kind, value) => Condition::Greater(kind.clone(), *value - 1),
+            Condition::Greater(kind, value) => Condition::Less(kind.clone(), *value + 1),
         }
     }
 }
 
-fn solve(parts: &Vec<Part>, workflows: &Workflows) -> u128 {
-    parts
-        .iter()
-        .filter(|part| process_part(*part, workflows))
-        .map(|part| part.value())
-        .sum()
+impl Part {
+    fn get_mut(&mut self, kind: &Kind) -> &mut MyRange {
+        match kind {
+            Kind::X => &mut self.x,
+            Kind::M => &mut self.m,
+            Kind::A => &mut self.a,
+            Kind::S => &mut self.s,
+        }
+    }
+
+    fn constrain_greater(&mut self, kind: &Kind, value: &u128) {
+        let member = self.get_mut(kind);
+        member.0 = member.0.max(*value + 1)
+    }
+
+    fn constrain_less(&mut self, kind: &Kind, value: &u128) {
+        let member = self.get_mut(kind);
+        member.1 = member.1.min(*value - 1)
+    }
+
+    fn constrain(&mut self, condition: &Condition) {
+        match condition {
+            Condition::Greater(kind, value) => self.constrain_greater(kind, value),
+            Condition::Less(kind, value) => self.constrain_less(kind, value),
+        }
+    }
+
+    fn population(&self) -> Option<u128> {
+        if self.x.1 > self.x.0 && self.m.1 > self.m.0 && self.a.1 > self.a.0 && self.s.1 > self.s.0
+        {
+            let mut product = self.x.1 - self.x.0 + 1;
+            product *= self.m.1 - self.m.0 + 1;
+            product *= self.a.1 - self.a.0 + 1;
+            product *= self.s.1 - self.s.0 + 1;
+
+            Some(product)
+        } else {
+            None
+        }
+    }
+}
+
+fn process_layers(part: &Part, layers: &[Layer], workflows: &Workflows) -> u128 {
+    if layers.len() > 0 {
+        let layer = &layers[0];
+
+        let mut part_layer = part.clone();
+        let mut part_rest = part.clone();
+
+        if let Some(condition) = &layer.condition {
+            part_layer.constrain(condition);
+            part_rest.constrain(&condition.inverse());
+        }
+
+        let layer = match &layer.decision {
+            Decision::Accept => part_layer.population().or(Some(0)).unwrap(),
+            Decision::Reject => 0,
+            Decision::Delegate(other_wf) => {
+                let downstream = &workflows.get(other_wf).unwrap().layers;
+                process_layers(&part_layer, downstream, workflows)
+            }
+        };
+
+        let remaining = if layers.len() > 1 {
+            let downstream = &layers[1..];
+            process_layers(&part_rest, downstream, workflows)
+        } else {
+            0
+        };
+
+        layer + remaining
+    } else {
+        if let Some(population) = part.population() {
+            population
+        } else {
+            0
+        }
+    }
+}
+
+fn solve(workflows: &Workflows) -> u128 {
+    let part = Part::default();
+    let wf = workflows.get("in").unwrap();
+
+    process_layers(&part, &wf.layers, workflows)
 }
 
 #[test]
@@ -247,14 +271,11 @@ hdj{m>838:A,pv}
 {x=2461,m=1339,a=466,s=291}
 {x=2127,m=1623,a=2188,s=1013}";
 
-    let (parts, workflows) = parse_text(sample).unwrap();
+    let workflows = parse_text(sample).unwrap();
 
-    // println!("Workflows: {workflows:#?}");
-    // println!("Parcdts: {parts:#?}");
+    let solution = solve(&workflows);
 
-    let solution = solve(&parts, &workflows);
-
-    assert_eq!(solution, 19114);
+    assert_eq!(solution, 167409079868000);
 }
 
 #[derive(Parser)]
@@ -268,9 +289,9 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let path = std::env::current_dir().unwrap().join(args.input);
 
-    let (parts, workflows) = parse_path(&path)?;
+    let workflows = parse_path(&path)?;
 
-    let solution = solve(&parts, &workflows);
+    let solution = solve(&workflows);
 
     println!("{solution}");
 
