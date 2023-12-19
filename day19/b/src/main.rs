@@ -236,11 +236,7 @@ fn process_layers(part: &Part, layers: &[Layer], workflows: &Workflows) -> u128 
 
         layer + remaining
     } else {
-        if let Some(population) = part.population() {
-            population
-        } else {
-            0
-        }
+        unreachable!()
     }
 }
 
