@@ -297,7 +297,7 @@ fn partition<'s>(
     ret
 }
 
-fn solve<'s>(network: &'s Network) -> u128 {
+fn solve(network: &Network) -> u128 {
     let start_end = find_sub_graphs_start_end(network);
     let mut subnetworks = partition(network, &start_end);
 
