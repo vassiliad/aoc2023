@@ -164,7 +164,7 @@ impl PartialOrd for State {
 
 struct State2 {
     pos: usize,
-    path: Vec<usize>,
+    path: HashSet<usize>,
     distance: usize,
 }
 
@@ -235,7 +235,7 @@ fn walk_nodes(nodes: &Vec<Node>) -> usize {
     let end = 1;
     let mut pending = vec![State2 {
         pos: 0,
-        path: vec![0],
+        path: HashSet::new(),
         distance: 0,
     }];
 
@@ -260,13 +260,13 @@ fn walk_nodes(nodes: &Vec<Node>) -> usize {
         }
 
         for neighbour in node.neighbours.iter() {
-            if path.iter().position(|idx| *idx == neighbour.id).is_some() {
+            if path.contains(&neighbour.id) {
                 continue;
             }
 
             let mut path = path.clone();
 
-            path.push(neighbour.id);
+            path.insert(neighbour.id);
 
             pending.push(State2 {
                 pos: neighbour.id,
