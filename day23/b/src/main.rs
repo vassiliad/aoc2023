@@ -127,7 +127,7 @@ impl PartialOrd for State {
 
 struct State2 {
     pos: usize,
-    path: HashSet<usize>,
+    path: u128,
     distance: usize,
 }
 
@@ -193,9 +193,13 @@ fn walk_nodes(nodes: &Vec<Node>) -> usize {
     let end = 1;
     let mut pending = vec![State2 {
         pos: 0,
-        path: HashSet::new(),
+        path: 0,
         distance: 0,
     }];
+
+    if nodes.len() > 127 {
+        panic!("Good luck");
+    }
 
     let mut max_score = 0;
 
@@ -218,13 +222,12 @@ fn walk_nodes(nodes: &Vec<Node>) -> usize {
         }
 
         for neighbour in node.neighbours.iter() {
-            if path.contains(&neighbour.id) {
+            if path & 1 << (neighbour.id + 1) > 0 {
                 continue;
             }
 
-            let mut path = path.clone();
-
-            path.insert(neighbour.id);
+            let mut path = path;
+            path |= 1 << (neighbour.id + 1);
 
             pending.push(State2 {
                 pos: neighbour.id,
