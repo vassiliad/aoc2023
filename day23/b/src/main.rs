@@ -6,11 +6,6 @@ use std::collections::{BTreeMap, BinaryHeap, HashMap, HashSet, VecDeque};
 enum Tile {
     Path,
     Forest,
-    // Right,
-    // Left,
-    // Up,
-    // Down,
-    Portal(usize, usize),
 }
 
 struct Maze {
@@ -45,38 +40,6 @@ impl Maze {
                     print!("#")
                 } else if !visited && matches!(tile, Tile::Path) {
                     print!(".")
-                } else if let &Tile::Portal(side_a, side_b) = tile {
-                    let diff = (side_a as isize - side_b as isize).abs() as usize;
-
-                    if diff < self.width {
-                        if side_a == idx {
-                            if visited {
-                                print!("A");
-                            } else {
-                                print!(">");
-                            }
-                        } else {
-                            if visited {
-                                print!("B");
-                            } else {
-                                print!("<");
-                            }
-                        }
-                    } else {
-                        if side_a == idx {
-                            if visited {
-                                print!("c");
-                            } else {
-                                print!("v");
-                            }
-                        } else {
-                            if visited {
-                                print!("D");
-                            } else {
-                                print!("^");
-                            }
-                        }
-                    }
                 } else if visited {
                     print!("O");
                 } else {
@@ -180,14 +143,11 @@ fn shortest_path(start: usize, end: usize, maze: &Maze) -> Option<usize> {
     let deltas: [isize; 4] = [1, -1, maze.width as isize, -(maze.width as isize)];
 
     while let Some(State { pos, distance }) = pending.pop() {
-        // println!("At {pos} with {distance}");
-
         if pos == end {
             return Some(distance);
         }
 
         if distance > best[pos] {
-            // println!("  Skip A");
             continue;
         }
 
@@ -201,8 +161,6 @@ fn shortest_path(start: usize, end: usize, maze: &Maze) -> Option<usize> {
             if neighbours > 2 {
                 // VV: This is a junction that we don't care about, we cannot cross it as we want to
                 // reach the End without going through any junctions
-
-                // println!("  Skip {neighbours:?} B");
                 continue;
             }
         }
