@@ -52,46 +52,6 @@ impl Shard {
 
         Self { pos, vel }
     }
-
-    /// Computes y = ax + b and returns (a, b)
-    fn to_line(&self) -> (f64, f64) {
-        let a = self.vel.y as f64 / self.vel.x as f64;
-        let b = self.pos.y as f64 - a * self.pos.x as f64;
-
-        (a, b)
-    }
-
-    fn intersection_point(first: &Self, other: &Self) -> Option<(Number, Number)> {
-        let (a1, b1) = first.to_line();
-        let (a2, b2) = other.to_line();
-
-        /* VV: Find intersection point between:
-                y = a1*x + b1
-                y = a2*x + b2
-
-           a1 * x + b1 = a2 * x + b2 => (a1-a2)*x = b2-b1 => x = (b2-b1)/(a1-a2)
-           y = a1 * x + b1
-
-           Filter out intersections that took place in the past.
-
-           Returns integers just to make filtering out points outside the min/max region easier.
-        */
-        let delta = a1 - a2;
-
-        if delta != 0.0 {
-            let x = (b2 - b1) / delta;
-            let y = a1 * x + b1;
-            if (x - first.pos.x as f64) / first.vel.x as f64 >= 0.0
-                && (x - other.pos.x as f64) / other.vel.x as f64 >= 0.0
-            {
-                Some((x as Number, y as Number))
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
 }
 
 fn parse_text(text: &str) -> Vec<Shard> {
