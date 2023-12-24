@@ -179,6 +179,8 @@ fn solve(shards: &Vec<Shard>) -> i64 {
         solver.assert(&rock_pos_z_t._eq(&shard_pos_z_t));
     }
 
+    solver.check();
+
     let model = solver.get_model().expect("Solve the problem");
 
     let rock_x = model

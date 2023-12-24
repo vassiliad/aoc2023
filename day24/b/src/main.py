@@ -55,6 +55,8 @@ def solve(shards: typing.List[Shard]) -> int:
         solver.add(rock_pos_y_t == shard_pos_y_t)
         solver.add(rock_pos_z_t == shard_pos_z_t)
 
+    solver.check()
+
     model = solver.model()
 
     return model.eval(r_pos_x + r_pos_y + r_pos_z)
